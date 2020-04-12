@@ -8,7 +8,7 @@ import (
 )
 
 type Snippet struct {
-	Id        string
+	ID       int
 	Title     string
 	Language  string
 	Content   string
@@ -16,8 +16,8 @@ type Snippet struct {
 	Tags      []string
 }
 
-func New(id string, title string, language string, content string, createdAt time.Time, tags []string) *Snippet {
-	return &Snippet{Id: id, Title: title, Language: language, Content: content, CreatedAt: createdAt, Tags: tags}
+func New(title string, language string, content string, createdAt time.Time, tags []string) *Snippet {
+	return &Snippet{Title: title, Language: language, Content: content, CreatedAt: createdAt, Tags: tags}
 }
 
 func Encode(s *Snippet, format string) []byte {
