@@ -13,11 +13,10 @@ type Snippet struct {
 	Language  string
 	Content   string
 	CreatedAt time.Time
-	Tags      []string
 }
 
-func New(title string, language string, content string, createdAt time.Time, tags []string) *Snippet {
-	return &Snippet{Title: title, Language: language, Content: content, CreatedAt: createdAt, Tags: tags}
+func New(title string, language string, content string, createdAt time.Time) *Snippet {
+	return &Snippet{Title: title, Language: language, Content: content, CreatedAt: createdAt}
 }
 
 func Encode(s *Snippet, format string) []byte {

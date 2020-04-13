@@ -1,14 +1,13 @@
 package main
 
 import (
-	"encoding/binary"
 	"flag"
 	"fmt"
 	bolt "go.etcd.io/bbolt"
 	"io/ioutil"
 	"log"
+	"os"
 	"snippets"
-	"strings"
 	"time"
 )
 
@@ -16,96 +15,97 @@ type Client struct {
 	db *bolt.DB
 }
 
+// CreateSnippet stores a snippet using $lang:$id:$title as the key and the whole obj as the val
 func (c *Client) CreateSnippet(s *snippets.Snippet) error {
-	return c.db.Update(func(tx *bolt.Tx) error {
-		b := tx.Bucket([]byte("snippets"))
 
-		id, _ := b.NextSequence()
-		s.ID = int(id)
-
-		return b.Put(itob(s.ID), snippets.Encode(s, "gob"))
-	})
-}
-
-func (c *Client) GetSnippetByID(id int) *snippets.Snippet {
-	var s = &snippets.Snippet{}
-	c.db.View(func(tx *bolt.Tx) error {
-		b := tx.Bucket([]byte("snippets"))
-		v := b.Get(itob(id))
-		s = snippets.Decode(v, "gob")
-		fmt.Printf("The answer is: %s\n", v)
-		return nil
-	})
-	return s
-}
-
-func (c *Client) GetAllSnippets() []*snippets.Snippet {
-	var sl []*snippets.Snippet
-	c.db.View(func(tx *bolt.Tx) error {
-		b := tx.Bucket([]byte("snippets"))
-
-		b.ForEach(func(k, v []byte) error {
-			sl = append(sl, snippets.Decode(v, "gob"))
-			return nil
-		})
-		return nil
-	})
-	return sl
-}
-
-// itob returns an 8-byte big endian representation of v.
-func itob(v int) []byte {
-	b := make([]byte, 8)
-	binary.BigEndian.PutUint64(b, uint64(v))
-	return b
-}
-func main() {
-
-	var filePath = flag.String("f", "", "filepath for the snippet")
-	var lang = flag.String("l", "", "language of the snippet")
-	var title = flag.String("t", "", "title for the snippet")
-	var tags = flag.String("tags", "", "tags for the snippet separated by comma (no spaces)")
-	var op = flag.String("op", "", "create|view")
-	flag.Parse()
-
-	// open connection and make sure snippets buckets exists or else gets created
-	db, err := bolt.Open("snippets.db", 0600, nil)
-	db.Update(func(tx *bolt.Tx) error {
-		_, err := tx.CreateBucketIfNotExists([]byte("snippets"))
-		if err != nil {
+	// create bucket for this specific language if it doesn't exist
+	c.db.Update(func(tx *bolt.Tx) error {
+		if _, err := tx.CreateBucketIfNotExists([]byte(s.Language)); err != nil {
 			return fmt.Errorf("create bucket: %s", err)
 		}
 		return nil
 	})
 
+	return c.db.Update(func(tx *bolt.Tx) error {
+		b := tx.Bucket([]byte(s.Language))
+		id, _ := b.NextSequence()
+		s.ID = int(id)
+		key := string(s.ID)
+		return b.Put([]byte(key), snippets.Encode(s, "gob"))
+	})
+}
+
+func (c *Client) ListSnippetsByLang(lang string) []*snippets.Snippet {
+	var sl []*snippets.Snippet
+	c.db.View(func(tx *bolt.Tx) error {
+		b := tx.Bucket([]byte(lang))
+		c := b.Cursor()
+		for k, v := c.First(); k != nil; k, v = c.Next() {
+			s := snippets.Decode(v, "gob")
+			sl = append(sl, s)
+		}
+		return nil
+	})
+	return sl
+}
+
+func main() {
+
+	createCmd := flag.NewFlagSet("create", flag.ExitOnError)
+	createLang := createCmd.String("l", "", "Language")
+	createTitle := createCmd.String("t", "", "Title")
+	createFilePath := createCmd.String("f", "", "File path")
+
+	viewCmd := flag.NewFlagSet("view", flag.ExitOnError)
+	viewLang := viewCmd.String("l", "", "Language")
+
+	if len(os.Args) < 2{
+		fmt.Println("Expected 'create' or 'view' subcommands")
+		os.Exit(1)
+	}
+
+	db, err := bolt.Open("snippets.db", 0600, nil)
 	if err != nil {
 		log.Fatal(err)
 	}
 	defer db.Close()
-
 	client := &Client{db: db}
 
-	if *op == "create" {
-		content, err := ioutil.ReadFile(*filePath)
+	switch os.Args[1] {
+	case "create":
+		createCmd.Parse(os.Args[2:])
+		if *createFilePath == "" {
+			fmt.Println("File path is mandatory")
+			os.Exit(1)
+		}
+		if *createLang == "" {
+			fmt.Println("Language is mandatory")
+			os.Exit(1)
+		}
+		if *createTitle == "" {
+			fmt.Println("Title is mandatory")
+			os.Exit(1)
+		}
+		content, err := ioutil.ReadFile(*createFilePath)
 		if err != nil {
 			log.Fatal("File reading error: ", err)
-			return
+			os.Exit(1)
 		}
-
-		var t []string
-
-		if len(*tags) != 0 {
-			t = strings.Split(*tags, ",")
-		}
-
-		s := snippets.New(*title, *lang, string(content), time.Now(), t)
+		s := snippets.New(*createTitle, *createLang, string(content), time.Now())
 		client.CreateSnippet(s)
-	} else if *op == "view" {
-		sl := client.GetAllSnippets()
-
-		for _, s := range sl {
-			fmt.Println(s)
+	case "view":
+		viewCmd.Parse(os.Args[2:])
+		if *viewLang == "" {
+			fmt.Println("Language is mandatory")
+			os.Exit(1)
 		}
+		sl := client.ListSnippetsByLang(*viewLang)
+		for _, s := range sl {
+			fmt.Printf("[%d] - %s\n", s.ID, s.Title)
+		}
+	default:
+		fmt.Println("expected 'create' or 'view' subcommands")
+		os.Exit(1)
 	}
 
 }
