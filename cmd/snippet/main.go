@@ -33,7 +33,6 @@ func main() {
 
 	store := snippets.NewStore("snippets.db", "snippets")
 
-
 	switch os.Args[1] {
 	case "create":
 		createCmd.Parse(os.Args[2:])
@@ -51,7 +50,7 @@ func main() {
 		}
 
 		var content string
-		if *createFilePath != ""{
+		if *createFilePath != "" {
 			byteContent, err := ioutil.ReadFile(*createFilePath)
 			if err != nil {
 				log.Fatal("File reading error: ", err)
