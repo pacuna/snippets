@@ -56,6 +56,10 @@ func main() {
 		if len(*createTags) > 0 {
 			tags = strings.Split(*createTags, ",")
 		}
+		// trim whitespaces
+		for _, tag := range tags {
+			tag = strings.TrimSpace(tag)
+		}
 		s := snippets.New(*createTitle, *createLang, string(content), time.Now(), tags)
 
 		store.CreateSnippet(s)
