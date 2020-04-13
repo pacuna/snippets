@@ -11,8 +11,6 @@ import (
 	"time"
 )
 
-
-
 func main() {
 
 	createCmd := flag.NewFlagSet("create", flag.ExitOnError)
@@ -26,7 +24,7 @@ func main() {
 	viewId := viewCmd.Int("id", 0, "ID")
 	viewTag := viewCmd.String("tag", "", "Tag")
 
-	if len(os.Args) < 2{
+	if len(os.Args) < 2 {
 		fmt.Println("Expected 'create' or 'view' subcommands")
 		os.Exit(1)
 	}
@@ -86,7 +84,7 @@ func main() {
 			return
 		}
 
-		if *viewId == 0 && *viewLang == "" && *viewTag == ""{
+		if *viewId == 0 && *viewLang == "" && *viewTag == "" {
 			fmt.Println("You need to provide id (-id), lang (l) or tag (-t)")
 			os.Exit(2)
 		}

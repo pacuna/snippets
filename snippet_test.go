@@ -11,7 +11,7 @@ func TestEncodeDecodeGob(t *testing.T) {
 		"go",
 	}
 	s := &snippets.Snippet{
-		Id:       "0",
+		ID:       0,
 		Title:    "Hello world",
 		Language: "Go",
 		Content: `

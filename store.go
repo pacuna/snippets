@@ -12,7 +12,7 @@ type Store struct {
 	path   string
 }
 
-func NewStore(path, bucket string) *Store{
+func NewStore(path, bucket string) *Store {
 	var (
 		db *bolt.DB
 	)
@@ -70,14 +70,14 @@ func (s *Store) CreateSnippet(snippet *Snippet) error {
 		// keys for different queries (by id, by lang, by tag and by lang+tag)
 		var keys []string
 		keys = append(keys, string(snippet.ID))
-		keys = append(keys, snippet.Language + ":" + string(snippet.ID))
+		keys = append(keys, snippet.Language+":"+string(snippet.ID))
 		for _, tag := range snippet.Tags {
-			keys = append(keys, tag + ":" + string(snippet.ID))
+			keys = append(keys, tag+":"+string(snippet.ID))
 			//keys = append(keys, snippet.Language + ":" + tag + ":" + string(snippet.ID))
 		}
 
 		for _, key := range keys {
-			if err:= b.Put([]byte(key), Encode(snippet, "gob")); err !=nil {
+			if err := b.Put([]byte(key), Encode(snippet, "gob")); err != nil {
 				return err
 			}
 		}
