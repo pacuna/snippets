@@ -3,6 +3,7 @@ package main
 import (
 	"flag"
 	"fmt"
+	"github.com/atotto/clipboard"
 	"io/ioutil"
 	"log"
 	"os"
@@ -18,6 +19,7 @@ func main() {
 	createTitle := createCmd.String("t", "", "Title")
 	createFilePath := createCmd.String("f", "", "File path")
 	createTags := createCmd.String("tags", "", "Tags")
+	createClipboard := createCmd.Bool("c", true, "Copy from clipboard")
 
 	viewCmd := flag.NewFlagSet("view", flag.ExitOnError)
 	viewLang := viewCmd.String("l", "", "Language")
@@ -31,11 +33,12 @@ func main() {
 
 	store := snippets.NewStore("snippets.db", "snippets")
 
+
 	switch os.Args[1] {
 	case "create":
 		createCmd.Parse(os.Args[2:])
-		if *createFilePath == "" {
-			fmt.Println("File path is mandatory")
+		if !*createClipboard && *createFilePath == "" {
+			fmt.Println("Clipboard copy (-c) or file path (-f) is mandatory")
 			os.Exit(1)
 		}
 		if *createLang == "" {
@@ -46,11 +49,26 @@ func main() {
 			fmt.Println("Title is mandatory")
 			os.Exit(1)
 		}
-		content, err := ioutil.ReadFile(*createFilePath)
-		if err != nil {
-			log.Fatal("File reading error: ", err)
-			os.Exit(1)
+
+		var content string
+		if *createFilePath != ""{
+			byteContent, err := ioutil.ReadFile(*createFilePath)
+			if err != nil {
+				log.Fatal("File reading error: ", err)
+				os.Exit(1)
+			}
+			content = string(byteContent)
 		}
+
+		if *createClipboard {
+			clipboard, err := clipboard.ReadAll()
+			if err != nil {
+				log.Fatal("Error while reading from clipboard: ", err)
+				os.Exit(1)
+			}
+			content = clipboard
+		}
+
 		// parse tags
 		var tags []string
 		if len(*createTags) > 0 {
@@ -60,7 +78,7 @@ func main() {
 		for _, tag := range tags {
 			tag = strings.TrimSpace(tag)
 		}
-		s := snippets.New(*createTitle, *createLang, string(content), time.Now(), tags)
+		s := snippets.New(*createTitle, *createLang, content, time.Now(), tags)
 
 		store.CreateSnippet(s)
 	case "view":
