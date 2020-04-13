@@ -49,6 +49,17 @@ func (c *Client) ListSnippetsByLang(lang string) []*snippets.Snippet {
 	return sl
 }
 
+func (c *Client) GetSnippetByID(lang string, id int) *snippets.Snippet{
+	var s *snippets.Snippet
+	c.db.View(func(tx *bolt.Tx) error {
+		b := tx.Bucket([]byte(lang))
+		v := b.Get([]byte(string(id)))
+		s = snippets.Decode(v, "gob")
+		return nil
+	})
+	return s
+}
+
 func main() {
 
 	createCmd := flag.NewFlagSet("create", flag.ExitOnError)
@@ -58,6 +69,7 @@ func main() {
 
 	viewCmd := flag.NewFlagSet("view", flag.ExitOnError)
 	viewLang := viewCmd.String("l", "", "Language")
+	viewId := viewCmd.Int("id", 0, "ID")
 
 	if len(os.Args) < 2{
 		fmt.Println("Expected 'create' or 'view' subcommands")
@@ -99,9 +111,16 @@ func main() {
 			fmt.Println("Language is mandatory")
 			os.Exit(1)
 		}
-		sl := client.ListSnippetsByLang(*viewLang)
-		for _, s := range sl {
-			fmt.Printf("[%d] - %s\n", s.ID, s.Title)
+
+		// No ID provided. List all for this language
+		if *viewId == 0 {
+			sl := client.ListSnippetsByLang(*viewLang)
+			for _, s := range sl {
+				fmt.Printf("[%d] - %s\n", s.ID, s.Title)
+			}
+		}else{
+			s := client.GetSnippetByID(*viewLang, *viewId)
+			fmt.Println(s.Content)
 		}
 	default:
 		fmt.Println("expected 'create' or 'view' subcommands")
