@@ -3,13 +3,14 @@ package main
 import (
 	"flag"
 	"fmt"
-	"github.com/atotto/clipboard"
 	"io/ioutil"
 	"log"
 	"os"
 	"snippets"
 	"strings"
 	"time"
+
+	"github.com/atotto/clipboard"
 )
 
 func main() {
