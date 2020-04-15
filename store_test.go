@@ -28,7 +28,7 @@ func TestStore_CreateSnippet(t *testing.T) {
 		"go",
 	}
 	s := &snippets.Snippet{
-		ID:       0,
+		ID:       1,
 		Title:    "Hello world",
 		Language: "Go",
 		Content: `
@@ -55,7 +55,7 @@ func TestStore_GetSnippetByID(t *testing.T) {
 		"go",
 	}
 	s := &snippets.Snippet{
-		ID:       0,
+		ID:       1,
 		Title:    "Hello world",
 		Language: "Go",
 		Content: `
@@ -76,7 +76,7 @@ func main(){
 		t.Errorf("There was an error creating snippet: %v", err)
 	}
 
-	got, _ := store.GetSnippetByID(0)
+	got, _ := store.GetSnippetByID(1)
 	if got.ID != s.ID {
 		t.Errorf("Got ID %d, expected %d", got.ID, s.ID)
 	}
@@ -97,7 +97,7 @@ func TestStore_ListSnippetsByLang(t *testing.T) {
 		"go",
 	}
 	s := &snippets.Snippet{
-		ID:       0,
+		ID:       1,
 		Title:    "Hello world",
 		Language: "Go",
 		Content: `
@@ -143,7 +143,7 @@ func TestStore_ListSnippetsByTag(t *testing.T) {
 		"basic",
 	}
 	s := &snippets.Snippet{
-		ID:       0,
+		ID:       1,
 		Title:    "Hello world",
 		Language: "Go",
 		Content: `
