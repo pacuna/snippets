@@ -16,16 +16,16 @@ import (
 func main() {
 
 	createCmd := flag.NewFlagSet("create", flag.ExitOnError)
-	createLang := createCmd.String("l", "", "Language")
-	createTitle := createCmd.String("t", "", "Title")
-	createFilePath := createCmd.String("f", "", "File path")
-	createTags := createCmd.String("tags", "", "Tags")
-	createClipboard := createCmd.Bool("c", true, "Copy from clipboard")
+	createClipboard := createCmd.Bool("c", true, "Copy snippet from clipboard")
+	createLang := createCmd.String("l", "", "Language of the snippet")
+	createTitle := createCmd.String("t", "", "Title for the snippet")
+	createFilePath := createCmd.String("f", "", "Path to file containing the snippet. Overrides clipboard")
+	createTags := createCmd.String("tags", "", "Tags for the snippet")
 
 	viewCmd := flag.NewFlagSet("view", flag.ExitOnError)
-	viewLang := viewCmd.String("l", "", "Language")
-	viewId := viewCmd.Int("id", 0, "ID")
-	viewTag := viewCmd.String("tag", "", "Tag")
+	viewLang := viewCmd.String("l", "", "Filter snippets by language")
+	viewId := viewCmd.Int("id", 0, "ID of snippet to display")
+	viewTag := viewCmd.String("tag", "", "Filter snippets by tag")
 
 	if len(os.Args) < 2 {
 		fmt.Println("Expected 'create' or 'view' subcommands")
