@@ -52,10 +52,25 @@ func TestSnippetsCLI(t *testing.T) {
 	cmdPath := filepath.Join(dir, binName)
 
 	clipboard.WriteAll(content)
-	t.Run("CreateSnippet", func(t *testing.T) {
+
+	t.Run("CreateSnippetFromClipboard", func(t *testing.T) {
 		cmd := exec.Command(cmdPath, "create", "-c", "-t", "Hello world", "-l", "go", "-tags", "basic,begginer")
 		if err := cmd.Run(); err != nil {
 			t.Fatal(err)
+		}
+	})
+
+	t.Run("CreateSnippetNoInput", func(t *testing.T) {
+		cmd := exec.Command(cmdPath, "create", "-c", "false", "-t", "Hello world", "-l", "go", "-tags", "basic,begginer")
+		if err := cmd.Run(); err == nil {
+			t.Fatal("Did not get an error")
+		}
+	})
+
+	t.Run("CreateSnippetWithBothInputs", func(t *testing.T) {
+		cmd := exec.Command(cmdPath, "create", "-c", "false", "-t", "Hello world", "-l", "go", "-tags", "basic,begginer")
+		if err := cmd.Run(); err == nil {
+			t.Fatal("Did not get an error")
 		}
 	})
 

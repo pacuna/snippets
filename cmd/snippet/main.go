@@ -37,29 +37,32 @@ func main() {
 	switch os.Args[1] {
 	case "create":
 		createCmd.Parse(os.Args[2:])
-		if !*createClipboard && *createFilePath == "" {
-			fmt.Println("Clipboard copy (-c) or file path (-f) is mandatory")
+	case "view":
+		viewCmd.Parse(os.Args[2:])
+	default:
+		flag.PrintDefaults()
+		os.Exit(1)
+	}
+
+	if createCmd.Parsed() {
+		// no clipboard and no file passed is error
+		if *createClipboard == false && *createFilePath == "" {
+			createCmd.PrintDefaults()
 			os.Exit(1)
 		}
+
 		if *createLang == "" {
-			fmt.Println("Language is mandatory")
+			createCmd.PrintDefaults()
 			os.Exit(1)
 		}
 		if *createTitle == "" {
-			fmt.Println("Title is mandatory")
+			createCmd.PrintDefaults()
 			os.Exit(1)
 		}
 
 		var content string
-		if *createFilePath != "" {
-			byteContent, err := ioutil.ReadFile(*createFilePath)
-			if err != nil {
-				log.Fatal("File reading error: ", err)
-				os.Exit(1)
-			}
-			content = string(byteContent)
-		}
 
+		// read from clipboard
 		if *createClipboard {
 			clipboard, err := clipboard.ReadAll()
 			if err != nil {
@@ -69,21 +72,30 @@ func main() {
 			content = clipboard
 		}
 
-		// parse tags
+		// read from file overrides clipboard which is default to true
+		if *createFilePath != "" {
+			byteContent, err := ioutil.ReadFile(*createFilePath)
+			if err != nil {
+				log.Fatal("File reading error: ", err)
+				os.Exit(1)
+			}
+			content = string(byteContent)
+		}
+
+		// parse tags and trim whitespaces
 		var tags []string
 		if len(*createTags) > 0 {
 			tags = strings.Split(*createTags, ",")
 		}
-		// trim whitespaces
 		for _, tag := range tags {
 			tag = strings.TrimSpace(tag)
 		}
+
 		s := snippets.New(*createTitle, *createLang, content, time.Now(), tags)
-
 		store.CreateSnippet(s)
-	case "view":
-		viewCmd.Parse(os.Args[2:])
+	}
 
+	if viewCmd.Parsed() {
 		if *viewId != 0 {
 			s, _ := store.GetSnippetByID(*viewId)
 			fmt.Println(s.Content)
@@ -107,12 +119,9 @@ func main() {
 		}
 
 		if *viewId == 0 && *viewLang == "" && *viewTag == "" {
-			fmt.Println("You need to provide id (-id), lang (l) or tag (-t)")
+			viewCmd.PrintDefaults()
 			os.Exit(2)
 		}
-	default:
-		fmt.Println("expected 'create' or 'view' subcommands")
-		os.Exit(1)
 	}
 
 }
