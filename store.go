@@ -3,6 +3,7 @@ package snippets
 import (
 	"bytes"
 	"fmt"
+
 	bolt "go.etcd.io/bbolt"
 )
 
@@ -99,6 +100,7 @@ func (s *Store) ListSnippetsByLang(lang string) ([]*Snippet, error) {
 	if db, err = s.getHandle(); err != nil {
 		return nil, err
 	}
+	defer s.releaseHandle()
 	db.View(func(tx *bolt.Tx) error {
 		c := tx.Bucket([]byte("snippets")).Cursor()
 		prefix := []byte(lang)
@@ -121,6 +123,7 @@ func (s *Store) ListSnippetsByTag(tag string) ([]*Snippet, error) {
 	if db, err = s.getHandle(); err != nil {
 		return nil, err
 	}
+	defer s.releaseHandle()
 	db.View(func(tx *bolt.Tx) error {
 		c := tx.Bucket([]byte("snippets")).Cursor()
 		prefix := []byte(tag)
@@ -143,12 +146,36 @@ func (s *Store) GetSnippetByID(id int) (*Snippet, error) {
 	if db, err = s.getHandle(); err != nil {
 		return nil, err
 	}
+	defer s.releaseHandle()
 
 	db.View(func(tx *bolt.Tx) error {
 		b := tx.Bucket([]byte("snippets"))
 		v := b.Get([]byte(string(id)))
-		snippet = Decode(v, "gob")
+		if v != nil {
+			snippet = Decode(v, "gob")
+		}
 		return nil
 	})
 	return snippet, nil
+}
+
+func (s *Store) DeleteSnippet(id int) error {
+	var (
+		db  *bolt.DB
+		err error
+	)
+
+	if db, err = s.getHandle(); err != nil {
+		return err
+	}
+	defer s.releaseHandle()
+
+	db.Update(func(tx *bolt.Tx) error {
+		b := tx.Bucket([]byte("snippets"))
+		if err := b.Delete([]byte(string(id))); err != nil {
+			return err
+		}
+		return nil
+	})
+	return nil
 }

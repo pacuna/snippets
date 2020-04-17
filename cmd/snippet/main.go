@@ -22,11 +22,17 @@ func main() {
 	createTitle := createCmd.String("t", "", "Title for the snippet")
 	createFilePath := createCmd.String("f", "", "Path to file containing the snippet. Overrides clipboard")
 	createTags := createCmd.String("tags", "", "Tags for the snippet")
+	createdbPath := createCmd.String("dbpath", "", "Optional dbpath")
 
 	viewCmd := flag.NewFlagSet("view", flag.ExitOnError)
 	viewLang := viewCmd.String("l", "", "Filter snippets by language")
 	viewId := viewCmd.Int("id", 0, "ID of snippet to display")
 	viewTag := viewCmd.String("tag", "", "Filter snippets by tag")
+	viewdbPath := viewCmd.String("dbpath", "", "Optional dbpath")
+
+	deleteCmd := flag.NewFlagSet("delete", flag.ExitOnError)
+	deleteId := deleteCmd.Int("id", 0, "ID of snippet to delete")
+	deletedbPath := deleteCmd.String("dbpath", "", "Optional dbpath")
 
 	if len(os.Args) < 2 {
 		fmt.Println("Expected 'create' or 'view' subcommands")
@@ -39,14 +45,29 @@ func main() {
 		os.Exit(1)
 	}
 
-	// intialize db in user's home dir
-	store := snippets.NewStore(user.HomeDir+"/snippets.db", "snippets")
+	// intialize db in user's home dir unless path is given
+	store := &snippets.Store{}
+	dbpath := user.HomeDir + "/snippets.db"
 
 	switch os.Args[1] {
 	case "create":
 		createCmd.Parse(os.Args[2:])
+		if *createdbPath != "" {
+			dbpath = *createdbPath
+		}
+		store = snippets.NewStore(dbpath, "snippets")
 	case "view":
 		viewCmd.Parse(os.Args[2:])
+		if *viewdbPath != "" {
+			dbpath = *viewdbPath
+		}
+		store = snippets.NewStore(dbpath, "snippets")
+	case "delete":
+		deleteCmd.Parse(os.Args[2:])
+		if *deletedbPath != "" {
+			dbpath = *deletedbPath
+		}
+		store = snippets.NewStore(dbpath, "snippets")
 	default:
 		flag.PrintDefaults()
 		os.Exit(1)
@@ -130,6 +151,19 @@ func main() {
 			viewCmd.PrintDefaults()
 			os.Exit(2)
 		}
+	}
+
+	if deleteCmd.Parsed() {
+		if *deleteId == 0 {
+			deleteCmd.PrintDefaults()
+			os.Exit(1)
+		}
+		err := store.DeleteSnippet(*deleteId)
+		if err != nil {
+			fmt.Println("Error deleting snippet: ", err)
+			os.Exit(1)
+		}
+		return
 	}
 
 }

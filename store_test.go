@@ -184,3 +184,52 @@ func main(){
 	}
 
 }
+
+func TestStore_DeleteSnippet(t *testing.T) {
+
+	s := &snippets.Snippet{
+		ID:       1,
+		Title:    "Hello world",
+		Language: "Go",
+		Content: `
+import "fmt"
+
+func main(){
+  fmt.Println("Hello world")
+}
+`,
+		CreatedAt: time.Now(),
+	}
+
+	store := snippets.NewStore(tempFile(), "snippets")
+	err := store.CreateSnippet(s)
+
+	if err != nil {
+		t.Errorf("There was an error creating snippet: %v", err)
+	}
+
+	snippet, err := store.GetSnippetByID(1)
+	if err != nil {
+		t.Errorf("There was an error retrieving snippet: %v", err)
+	}
+
+	if snippet.Title == "" {
+		t.Error("Snippet was not create")
+	}
+
+	// Now delete it
+	err = store.DeleteSnippet(1)
+	if err != nil {
+		t.Error("Error deleting snippet: ", err)
+	}
+
+	snippet, err = store.GetSnippetByID(1)
+	if err != nil {
+		t.Errorf("There was an error retrieving snippet: %v", err)
+	}
+
+	if snippet != nil {
+		t.Error("Snippet was not deleted")
+	}
+
+}

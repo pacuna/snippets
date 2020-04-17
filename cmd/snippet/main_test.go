@@ -12,7 +12,7 @@ import (
 
 var (
 	binName  = "snippet"
-	fileName = "snippets.db"
+	fileName = "snippets_test.db"
 )
 
 func TestMain(m *testing.M) {
@@ -54,28 +54,28 @@ func TestSnippetsCLI(t *testing.T) {
 	clipboard.WriteAll(content)
 
 	t.Run("CreateSnippetFromClipboard", func(t *testing.T) {
-		cmd := exec.Command(cmdPath, "create", "-c", "-t", "Hello world", "-l", "go", "-tags", "basic,begginer")
+		cmd := exec.Command(cmdPath, "create", "-c", "-t", "Hello world", "-l", "go", "-tags", "basic,begginer", "-dbpath", fileName)
 		if err := cmd.Run(); err != nil {
 			t.Fatal(err)
 		}
 	})
 
 	t.Run("CreateSnippetNoInput", func(t *testing.T) {
-		cmd := exec.Command(cmdPath, "create", "-c", "false", "-t", "Hello world", "-l", "go", "-tags", "basic,begginer")
+		cmd := exec.Command(cmdPath, "create", "-c", "false", "-t", "Hello world", "-l", "go", "-tags", "basic,begginer", "-dbpath", fileName)
 		if err := cmd.Run(); err == nil {
 			t.Fatal("Did not get an error")
 		}
 	})
 
 	t.Run("CreateSnippetWithBothInputs", func(t *testing.T) {
-		cmd := exec.Command(cmdPath, "create", "-c", "false", "-t", "Hello world", "-l", "go", "-tags", "basic,begginer")
+		cmd := exec.Command(cmdPath, "create", "-c", "false", "-t", "Hello world", "-l", "go", "-tags", "basic,begginer", "-dbpath", fileName)
 		if err := cmd.Run(); err == nil {
 			t.Fatal("Did not get an error")
 		}
 	})
 
 	t.Run("ViewByLang", func(t *testing.T) {
-		cmd := exec.Command(cmdPath, "view", "-l", "go")
+		cmd := exec.Command(cmdPath, "view", "-l", "go", "-dbpath", fileName)
 		out, err := cmd.CombinedOutput()
 		if err != nil {
 			t.Fatal(err)
@@ -89,7 +89,7 @@ func TestSnippetsCLI(t *testing.T) {
 	})
 
 	t.Run("ViewByTag", func(t *testing.T) {
-		cmd := exec.Command(cmdPath, "view", "-tag", "basic")
+		cmd := exec.Command(cmdPath, "view", "-tag", "basic", "-dbpath", fileName)
 		out, err := cmd.CombinedOutput()
 		if err != nil {
 			t.Fatal(err)
@@ -103,7 +103,7 @@ func TestSnippetsCLI(t *testing.T) {
 	})
 
 	t.Run("ViewById", func(t *testing.T) {
-		cmd := exec.Command(cmdPath, "view", "-id", "1")
+		cmd := exec.Command(cmdPath, "view", "-id", "1", "-dbpath", fileName)
 		out, err := cmd.CombinedOutput()
 		if err != nil {
 			t.Fatal(err)
@@ -111,6 +111,13 @@ func TestSnippetsCLI(t *testing.T) {
 
 		if content+"\n" != string(out) {
 			t.Errorf("Expect %q, got %q instead\n", content, string(out))
+		}
+	})
+
+	t.Run("DeleteSnippet", func(t *testing.T) {
+		cmd := exec.Command(cmdPath, "delete", "-id", "1", "-dbpath", fileName)
+		if err := cmd.Run(); err != nil {
+			t.Fatal("err")
 		}
 	})
 }
