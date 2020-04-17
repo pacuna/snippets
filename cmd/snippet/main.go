@@ -6,6 +6,7 @@ import (
 	"io/ioutil"
 	"log"
 	"os"
+	"os/user"
 	"snippets"
 	"strings"
 	"time"
@@ -32,7 +33,14 @@ func main() {
 		os.Exit(1)
 	}
 
-	store := snippets.NewStore("snippets.db", "snippets")
+	user, err := user.Current()
+	if err != nil {
+		fmt.Println("Error initializing db")
+		os.Exit(1)
+	}
+
+	// intialize db in user's home dir
+	store := snippets.NewStore(user.HomeDir+"/snippets.db", "snippets")
 
 	switch os.Args[1] {
 	case "create":
