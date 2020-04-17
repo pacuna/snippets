@@ -160,6 +160,8 @@ func (s *Store) GetSnippetByID(id int) (*Snippet, error) {
 }
 
 func (s *Store) DeleteSnippet(id int) error {
+
+	snippet, _ := s.GetSnippetByID(id)
 	var (
 		db  *bolt.DB
 		err error
@@ -170,12 +172,26 @@ func (s *Store) DeleteSnippet(id int) error {
 	}
 	defer s.releaseHandle()
 
-	db.Update(func(tx *bolt.Tx) error {
+	if err := db.Update(func(tx *bolt.Tx) error {
 		b := tx.Bucket([]byte("snippets"))
-		if err := b.Delete([]byte(string(id))); err != nil {
-			return err
+
+		// keys to delete
+		var keys []string
+		keys = append(keys, string(snippet.ID))
+		keys = append(keys, snippet.Language+":"+string(snippet.ID))
+		for _, tag := range snippet.Tags {
+			keys = append(keys, tag+":"+string(snippet.ID))
+		}
+
+		for _, key := range keys {
+			if err := b.Delete([]byte(key)); err != nil {
+				return err
+			}
 		}
 		return nil
-	})
+	}); err != nil {
+		return err
+	}
+
 	return nil
 }
